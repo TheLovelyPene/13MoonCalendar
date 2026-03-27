@@ -1,0 +1,39 @@
+# ── Node ────────────────────────────────────────────────
+node_modules/
+.DS_Store
+
+# ── Build output ─────────────────────────────────────────
+frontend/dist/
+frontend/.vite/
+
+# ──────────────────────────────────────────────────────────
+# PERSONAL DATA — never commit to public repo
+# ──────────────────────────────────────────────────────────
+
+# Personal session logs (contain time tracking, decisions, private notes)
+Logs/
+
+# Personal weekly schedule with private appointments
+frontend/src/constants/weeklySchedule.ts
+
+# Context files (may contain raw AI session data)
+Context/
+
+# Scratch files (personal working notes)
+scratch/
+
+# Exported calendar files (may contain private event data)
+*.ics
+
+# Personal notes files
+calendar.md
+proton_sync_guide.md
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/

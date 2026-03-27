@@ -1,0 +1,33 @@
+{
+  "short_name": "13 Moons",
+  "name": "The 13 Moons Calendar",
+  "description": "A personal 13-moon cycle calendar with editable events and alarm notifications.",
+  "icons": [
+    {
+      "src": "moon-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "moon-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0a0b1e",
+  "background_color": "#0a0b1e",
+  "categories": ["productivity", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "My Alarms",
+      "short_name": "Alarms",
+      "url": "./?tab=alarms",
+      "icons": [{ "src": "moon-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}
