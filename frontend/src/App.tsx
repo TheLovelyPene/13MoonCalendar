@@ -364,7 +364,7 @@ const App: React.FC = () => {
       </nav>
 
       <main style={{ paddingTop: '1.5rem' }}>
-        {activeTab === 'today' && <TodayGrid />}
+        {activeTab === 'today' && TodayGrid()}
         {activeTab === 'year' && (
           <YearView
             today={currentDate}
