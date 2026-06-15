@@ -100,21 +100,7 @@ const App: React.FC = () => {
     setMoonInfo(getMoonDate(currentDate));
   }, [currentDate]);
 
-  if (!moonInfo) return null;
-  const currentMoon = moonInfo.moon;
-
-  const startOfYear = currentDate.getMonth() < 2 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
-
-  // ── Handlers: External Events ────────────────────────────────────────────
-  const handleImport = (newEvents: ExternalEvent[]) => {
-    setExternalEvents((prev) => [...prev, ...newEvents]);
-  };
-
-  const handleClearAll = () => {
-    if (window.confirm('Delete all imported events?')) setExternalEvents([]);
-  };
-
-  // ── Handlers: Personal Events ────────────────────────────────────────────
+  // ── Handlers must be declared before any early return (Rules of Hooks) ───
   const handleAddPersonalEvent = useCallback((event: PersonalEvent) => {
     setPersonalEvents((prev) => [...prev, event]);
   }, []);
@@ -123,7 +109,6 @@ const App: React.FC = () => {
     setPersonalEvents((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
-  // ── Handlers: Alarms ─────────────────────────────────────────────────────
   const handleAddAlarm = useCallback((alarm: Alarm) => {
     setAlarms((prev) => {
       const next = [...prev, alarm];
@@ -155,10 +140,25 @@ const App: React.FC = () => {
     });
   }, []);
 
-  // ── Day click handler ────────────────────────────────────────────────────
   const handleDayClick = useCallback((date: Date, moonIndex: number, dayOfMoon: number) => {
     setSelectedDay({ date, moonIndex, dayOfMoon });
   }, []);
+
+  // ── Early return after all hooks ─────────────────────────────────────────
+  if (!moonInfo) return null;
+  const currentMoon = moonInfo.moon;
+
+  const startOfYear = currentDate.getMonth() < 2 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
+
+  // ── Handlers: External Events ────────────────────────────────────────────
+  const handleImport = (newEvents: ExternalEvent[]) => {
+    setExternalEvents((prev) => [...prev, ...newEvents]);
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm('Delete all imported events?')) setExternalEvents([]);
+  };
+
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const cleanDescription = (desc: string) => {
