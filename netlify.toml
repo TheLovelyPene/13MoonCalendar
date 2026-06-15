@@ -1,0 +1,12 @@
+# Netlify configuration for 13 Moon Calendar PWA
+
+[build]
+  base = "frontend"
+  publish = "dist"
+  command = "npm run build"
+
+# Redirect all routes to index.html so the React SPA handles routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

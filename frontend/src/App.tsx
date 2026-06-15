@@ -70,17 +70,29 @@ const App: React.FC = () => {
 
   // ── Persist external events ──────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('moonCalendarEvents', JSON.stringify(externalEvents));
+    try {
+      localStorage.setItem('moonCalendarEvents', JSON.stringify(externalEvents));
+    } catch (e) {
+      console.warn('Could not save external events to localStorage', e);
+    }
   }, [externalEvents]);
 
   // ── Persist personal events ──────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('moonPersonalEvents', JSON.stringify(personalEvents));
+    try {
+      localStorage.setItem('moonPersonalEvents', JSON.stringify(personalEvents));
+    } catch (e) {
+      console.warn('Could not save personal events to localStorage', e);
+    }
   }, [personalEvents]);
 
   // ── Persist alarms ───────────────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('moonAlarms', JSON.stringify(alarms));
+    try {
+      localStorage.setItem('moonAlarms', JSON.stringify(alarms));
+    } catch (e) {
+      console.warn('Could not save alarms to localStorage', e);
+    }
   }, [alarms]);
 
   // ── Moon info for today ──────────────────────────────────────────────────

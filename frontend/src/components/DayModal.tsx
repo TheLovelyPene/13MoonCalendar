@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Bell, Trash2, Music, Clock } from 'lucide-react';
 import type { PersonalEvent, Alarm, ExternalEvent } from '../types';
-import { WeeklyEvent } from '../constants/weeklySchedule';
+import type { WeeklyEvent } from '../constants/weeklySchedule';
 import { readFileAsDataUrl } from '../services/notificationService';
 
 interface DayModalProps {

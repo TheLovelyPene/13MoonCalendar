@@ -11,6 +11,19 @@
     <title>THE 13 MOONS</title>
   </head>
   <body>
+    <div id="error-display" style="position: absolute; top: 0; left: 0; width: 100%; padding: 20px; background: red; color: white; z-index: 9999; display: none; font-family: monospace; white-space: pre-wrap;"></div>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        var el = document.getElementById('error-display');
+        el.style.display = 'block';
+        el.innerText = "Error: " + message + "\n" + (error && error.stack ? error.stack : "");
+      };
+      window.addEventListener('unhandledrejection', function(event) {
+        var el = document.getElementById('error-display');
+        el.style.display = 'block';
+        el.innerText = "Promise Error: " + event.reason;
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
