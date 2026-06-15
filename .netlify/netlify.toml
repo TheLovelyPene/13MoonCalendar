@@ -14,7 +14,7 @@ command = "npm run build"
 base = "/Users/penny/Desktop/Secure Folder 2/Lovely Penelope Inc/13 Moon Calendar/frontend"
 
 [build.environment]
-NODE_VERSION = "22"
+NODE_VERSION = "20"
 
 [build.processing]
 
