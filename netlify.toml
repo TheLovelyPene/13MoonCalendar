@@ -5,6 +5,9 @@
   publish = "dist"
   command = "npm run build"
 
+[build.environment]
+  NODE_VERSION = "22"
+
 # Redirect all routes to index.html so the React SPA handles routing
 [[redirects]]
   from = "/*"
