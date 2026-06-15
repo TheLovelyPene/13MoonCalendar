@@ -1,84 +1,87 @@
 // Service Worker for 13 Moons Calendar PWA
-// Cache-first strategy with network fallback
+// v3 — never cache index.html (it changes every deploy), always fetch fresh
 
-const CACHE_NAME = '13-moons-v2';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
+const CACHE_NAME = '13-moons-v3';
+
+// Only cache truly static assets that have content hashes in their filenames
+// Do NOT include index.html here — it changes on every deploy
+const STATIC_ASSETS = [
   '/manifest.json',
   '/moon-icon.png',
 ];
 
-// Install: cache core assets
+// Install: cache only the static assets (NOT index.html)
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing...');
+  console.log('[SW] Installing v3...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching core assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+      console.log('[SW] Caching static assets');
+      return cache.addAll(STATIC_ASSETS);
     })
   );
-  // Activate immediately — don't wait for old SW to expire
+  // Take over immediately
   self.skipWaiting();
 });
 
-// Activate: clean up old caches
+// Activate: delete ALL old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating...');
+  console.log('[SW] Activating v3...');
   event.waitUntil(
-    caches.keys().then((cacheNames) =>
+    caches.keys().then((names) =>
       Promise.all(
-        cacheNames
+        names
           .filter((name) => name !== CACHE_NAME)
           .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
+            console.log('[SW] Clearing old cache:', name);
             return caches.delete(name);
           })
       )
     )
   );
-  // Take control of all open pages immediately
   self.clients.claim();
 });
 
-// Fetch: network-first for navigation, cache-first for assets
+// Fetch strategy:
+// - Navigation (HTML pages): ALWAYS network, never cache
+// - JS/CSS assets: cache-first (they have content hashes so they never change)
+// - Everything else: network first, fall back to cache
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Only handle same-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
+  if (url.origin !== location.origin) return;
 
-  // For navigation requests (HTML pages): network first, fallback to cache
-  if (request.mode === 'navigate') {
+  // HTML / navigation: always go to network, never serve from cache
+  if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache a fresh copy
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => {
-          // Offline: serve from cache
-          return caches.match('/index.html');
-        })
+      fetch(request).catch(() => {
+        // Only use cache as last resort when completely offline
+        return caches.match('/index.html');
+      })
     );
     return;
   }
 
-  // For other assets: cache first, network fallback
+  // Hashed JS/CSS assets: cache-first (safe because filenames change with content)
+  if (url.pathname.startsWith('/assets/')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Everything else: network first
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200) return response;
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        return response;
-      });
-    })
+    fetch(request).catch(() => caches.match(request))
   );
 });
