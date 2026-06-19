@@ -2,6 +2,10 @@
 node_modules/
 .DS_Store
 
+# ── Android / Capacitor ──────────────────────────────────
+frontend/android/
+frontend/capacitor.config.ts
+
 # ── Build output ─────────────────────────────────────────
 frontend/dist/
 frontend/.vite/
@@ -28,6 +32,9 @@ scratch/
 # Personal notes files
 calendar.md
 proton_sync_guide.md
+
+# Netlify local state (contains personal site ID)
+.netlify/state.json
 
 # Environment files
 .env

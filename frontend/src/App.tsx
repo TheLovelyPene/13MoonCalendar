@@ -12,6 +12,8 @@ import './index.css';
 
 type Tab = 'today' | 'year' | 'alarms';
 
+const WEEKDAY_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
 const dateKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -35,7 +37,6 @@ const App: React.FC = () => {
 
   // ── Load from localStorage ───────────────────────────────────────────────
   useEffect(() => {
-    // External events
     try {
       const saved = localStorage.getItem('moonCalendarEvents');
       if (saved) {
@@ -48,20 +49,17 @@ const App: React.FC = () => {
       }
     } catch {}
 
-    // Personal events
     try {
       const saved = localStorage.getItem('moonPersonalEvents');
       if (saved) setPersonalEvents(JSON.parse(saved));
     } catch {}
 
-    // Alarms
     try {
       const saved = localStorage.getItem('moonAlarms');
       if (saved) {
         const parsed: Alarm[] = JSON.parse(saved);
         setAlarms(parsed);
         rescheduleAll(parsed, (id) => {
-          // Mark as fired
           setAlarms((prev) => prev.map((a) => (a.id === id ? { ...a, firedAt: Date.now() } : a)));
         });
       }
@@ -70,29 +68,17 @@ const App: React.FC = () => {
 
   // ── Persist external events ──────────────────────────────────────────────
   useEffect(() => {
-    try {
-      localStorage.setItem('moonCalendarEvents', JSON.stringify(externalEvents));
-    } catch (e) {
-      console.warn('Could not save external events to localStorage', e);
-    }
+    try { localStorage.setItem('moonCalendarEvents', JSON.stringify(externalEvents)); } catch {}
   }, [externalEvents]);
 
   // ── Persist personal events ──────────────────────────────────────────────
   useEffect(() => {
-    try {
-      localStorage.setItem('moonPersonalEvents', JSON.stringify(personalEvents));
-    } catch (e) {
-      console.warn('Could not save personal events to localStorage', e);
-    }
+    try { localStorage.setItem('moonPersonalEvents', JSON.stringify(personalEvents)); } catch {}
   }, [personalEvents]);
 
   // ── Persist alarms ───────────────────────────────────────────────────────
   useEffect(() => {
-    try {
-      localStorage.setItem('moonAlarms', JSON.stringify(alarms));
-    } catch (e) {
-      console.warn('Could not save alarms to localStorage', e);
-    }
+    try { localStorage.setItem('moonAlarms', JSON.stringify(alarms)); } catch {}
   }, [alarms]);
 
   // ── Moon info for today ──────────────────────────────────────────────────
@@ -100,7 +86,7 @@ const App: React.FC = () => {
     setMoonInfo(getMoonDate(currentDate));
   }, [currentDate]);
 
-  // ── Handlers must be declared before any early return (Rules of Hooks) ───
+  // ── Handlers ────────────────────────────────────────────────────────────
   const handleAddPersonalEvent = useCallback((event: PersonalEvent) => {
     setPersonalEvents((prev) => [...prev, event]);
   }, []);
@@ -144,13 +130,11 @@ const App: React.FC = () => {
     setSelectedDay({ date, moonIndex, dayOfMoon });
   }, []);
 
-  // ── Early return after all hooks ─────────────────────────────────────────
   if (!moonInfo) return null;
-  const currentMoon = moonInfo.moon;
 
+  const currentMoon = moonInfo.moon;
   const startOfYear = currentDate.getMonth() < 2 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
 
-  // ── Handlers: External Events ────────────────────────────────────────────
   const handleImport = (newEvents: ExternalEvent[]) => {
     setExternalEvents((prev) => [...prev, ...newEvents]);
   };
@@ -159,8 +143,6 @@ const App: React.FC = () => {
     if (window.confirm('Delete all imported events?')) setExternalEvents([]);
   };
 
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
   const cleanDescription = (desc: string) => {
     if (!desc) return '';
     return desc
@@ -183,158 +165,113 @@ const App: React.FC = () => {
   );
   const selectedDayWeekly = selectedDay
     ? WEEKLY_SCHEDULE.filter((e) => {
-        const jsDay = selectedDay.date.getDay(); // 0=Sun, 1=Mon…6=Sat
-        const moonDay = jsDay === 0 ? 6 : jsDay - 1; // convert to 0=Mon…6=Sun
+        const jsDay = selectedDay.date.getDay();
+        const moonDay = jsDay === 0 ? 6 : jsDay - 1;
         return e.dayOfWeek === moonDay;
       })
     : [];
 
-  // ── Today tab: current 28-day grid ──────────────────────────────────────
+  // ── Today view: proper 7-col calendar grid ──────────────────────────────
   const TodayGrid = () => (
     <>
       {/* Current Moon Summary */}
-      <section className="current-moon-summary" style={{
-        background: 'var(--bg-card)',
-        padding: '2rem',
-        borderRadius: '16px',
-        border: '1px solid var(--border)',
-        marginBottom: '3rem',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <Moon color="var(--accent-gold)" size={32} />
-          <h2 style={{ fontSize: '1.8rem', fontWeight: 300 }}>
-            Moon {currentMoon.number}: {currentMoon.name}
-          </h2>
+      <section className="current-moon-summary">
+        <div className="moon-summary-header">
+          <Moon color="var(--accent-gold)" size={24} />
+          <h2>Moon {currentMoon.number}: {currentMoon.name}</h2>
         </div>
-        <p style={{ fontSize: '1.1rem', color: 'var(--accent-silver)', fontStyle: 'italic', marginBottom: '1.5rem' }}>
-          "{cleanDescription(currentMoon.energyTheme)}"
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          <div>
-            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cycle Progress</h3>
-            <p style={{ fontSize: '1.4rem' }}>Day {moonInfo.dayOfMoon} of 28 <span style={{ color: 'var(--text-dim)', fontSize: '1rem' }}>(Week {moonInfo.weekOfMoon})</span></p>
+        <p className="moon-energy-theme">"{cleanDescription(currentMoon.energyTheme)}"</p>
+        <div className="moon-meta-grid">
+          <div className="moon-meta-item">
+            <h3>Cycle Progress</h3>
+            <p>Day {moonInfo.dayOfMoon} / 28 <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Wk {moonInfo.weekOfMoon}</span></p>
           </div>
-          <div>
-            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gregorian Window</h3>
-            <p style={{ fontSize: '1.1rem' }}>{currentMoon.startGregorian} — {currentMoon.endGregorian}</p>
+          <div className="moon-meta-item">
+            <h3>Gregorian Window</h3>
+            <p style={{ fontSize: '0.82rem', marginTop: '2px' }}>{currentMoon.startGregorian} – {currentMoon.endGregorian}</p>
           </div>
         </div>
       </section>
 
-      {/* Monthly Grid Controls */}
-      <section>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 400 }}>Monthly Grid — {currentMoon.name}</h2>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            {externalEvents.length > 0 && (
-              <button onClick={handleClearAll} style={{
-                background: 'rgba(255,107,107,0.1)',
-                border: '1px solid #ff6b6b',
-                color: '#ff6b6b',
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-              }}>
-                <Trash2 size={14} /> Clear {externalEvents.length}
-              </button>
-            )}
-            <button onClick={() => setIsImportModalOpen(true)} style={{
-              background: 'transparent',
-              border: '1px solid var(--accent-gold)',
-              color: 'var(--accent-gold)',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}>
-              <ExternalLink size={16} /> Import External
+      {/* Calendar Controls */}
+      <div className="calendar-section-header">
+        <h2>{currentMoon.name}</h2>
+        <div className="calendar-actions">
+          {externalEvents.length > 0 && (
+            <button onClick={handleClearAll} className="btn-outline-danger">
+              <Trash2 size={13} /> {externalEvents.length}
             </button>
-          </div>
+          )}
+          <button onClick={() => setIsImportModalOpen(true)} className="btn-outline-gold">
+            <ExternalLink size={13} /> Import
+          </button>
         </div>
+      </div>
 
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>
-          Tap any day to view details, add events, or set an alarm.
-        </p>
+      <p className="hint-text">Tap a day for details, events & alarms</p>
 
-        <div className="moon-grid">
-          {Array.from({ length: 28 }).map((_, i) => {
-            const day = i + 1;
-            const dayOfWeek = i % 7;
-            const isActive = day === moonInfo.dayOfMoon;
-            const gregDate = getGregorianDate(currentMoon.number, day, startOfYear);
-            const key = dateKey(gregDate);
-            const dayEvents = WEEKLY_SCHEDULE.filter((e) => e.dayOfWeek === dayOfWeek);
-            const dayPersonal = personalEvents.filter((e) => e.date === key);
-            const dayExternal = externalEvents.filter(
-              (e) => new Date(e.start).toDateString() === gregDate.toDateString()
-            );
-            const dayAlarms = alarms.filter((a) => a.enabled && a.date === key);
+      {/* Weekday Headers */}
+      <div className="weekday-header">
+        {WEEKDAY_LABELS.map((d) => (
+          <div key={d} className="weekday-label">{d}</div>
+        ))}
+      </div>
 
-            return (
-              <div
-                key={i}
-                className="day-card"
-                onClick={() => handleDayClick(gregDate, -1, day)}
-                style={{
-                  borderColor: isActive ? 'var(--accent-gold)' : 'var(--border)',
-                  background: isActive ? 'rgba(244,208,63,0.05)' : 'var(--bg-card)',
-                  cursor: 'pointer',
-                  position: 'relative',
-                }}
-              >
-                {/* Alarm badge */}
-                {dayAlarms.length > 0 && (
-                  <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'var(--accent-gold)', color: 'var(--bg-deep)', borderRadius: '99px', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 800, zIndex: 1 }}>
-                    {dayAlarms.length}
-                  </div>
-                )}
+      {/* 7-Column Calendar Grid (4 rows × 7 cols = 28 days) */}
+      <div className="moon-grid">
+        {Array.from({ length: 28 }).map((_, i) => {
+          const day = i + 1;
+          const dayOfWeek = i % 7; // 0=Mon
+          const isActive = day === moonInfo.dayOfMoon;
+          const gregDate = getGregorianDate(currentMoon.number, day, startOfYear);
+          const key = dateKey(gregDate);
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                    <span className="day-number">Day {day}</span>
-                    <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 300 }}>
-                      {gregDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
-                    {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'][dayOfWeek]}
-                  </span>
-                </div>
+          const hasPersonal = personalEvents.some((e) => e.date === key);
+          const hasExternal = externalEvents.some(
+            (e) => new Date(e.start).toDateString() === gregDate.toDateString()
+          );
+          const hasWeekly = WEEKLY_SCHEDULE.some((e) => e.dayOfWeek === dayOfWeek);
+          const activeAlarms = alarms.filter((a) => a.enabled && a.date === key);
 
-                <div className="event-list">
-                  {day === 1 && (
-                    <div className="event-item" style={{ background: 'rgba(244,208,63,0.2)' }}>✨ {currentMoon.name} Begins</div>
-                  )}
-                  {dayPersonal.slice(0, 2).map((e) => (
-                    <div key={e.id} className="event-item" style={{ borderLeftColor: e.color || 'var(--accent-gold)', background: 'rgba(255,255,255,0.05)' }}>
-                      {e.startTime && <span style={{ opacity: 0.6, fontSize: '0.6rem' }}>{e.startTime} </span>}{e.title}
-                    </div>
-                  ))}
-                  {dayExternal.slice(0, 1).map((e, idx) => (
-                    <div key={`ext-${idx}`} className="event-item" style={{ background: 'rgba(255,255,255,0.1)', borderLeftColor: 'var(--accent-silver)' }}>
-                      <span style={{ fontSize: '0.6rem', display: 'flex', alignItems: 'center', gap: '2px', opacity: 0.7 }}>
-                        <CalendarIcon size={8} /> {e.start.getHours()}:{String(e.start.getMinutes()).padStart(2, '0')}
-                      </span>
-                      {e.title}
-                    </div>
-                  ))}
-                  {dayEvents.slice(0, 1).map((e, idx) => (
-                    <div key={`week-${idx}`} className="event-item" title={`${e.startTime}-${e.endTime}`}>
-                      <span style={{ opacity: 0.6, fontSize: '0.65rem' }}>{e.startTime}</span> {e.title}
-                    </div>
-                  ))}
-                </div>
+          return (
+            <div
+              key={i}
+              className={`day-cell${isActive ? ' is-today' : ''}`}
+              onClick={() => handleDayClick(gregDate, -1, day)}
+            >
+              {/* Alarm badge */}
+              {activeAlarms.length > 0 && (
+                <div className="alarm-badge">{activeAlarms.length}</div>
+              )}
+
+              {/* Day number */}
+              <div className="day-cell-number">{day}</div>
+
+              {/* Gregorian date */}
+              <div className="day-cell-greg">
+                {gregDate.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}
               </div>
-            );
-          })}
-        </div>
-      </section>
+
+              {/* Event dot indicators */}
+              <div className="day-cell-dots">
+                {day === 1 && <span className="event-dot moon-start" title="Moon begins" />}
+                {hasPersonal && <span className="event-dot personal" title="Personal event" />}
+                {hasExternal && <span className="event-dot external" title="Imported event" />}
+                {hasWeekly  && <span className="event-dot weekly"   title="Weekly event" />}
+                {activeAlarms.length > 0 && <span className="event-dot alarm" title="Alarm set" />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="calendar-legend">
+        <div className="legend-item"><span className="event-dot personal" style={{ display:'inline-block' }} /> Personal</div>
+        <div className="legend-item"><span className="event-dot external" style={{ display:'inline-block' }} /> Imported</div>
+        <div className="legend-item"><span className="event-dot weekly"   style={{ display:'inline-block' }} /> Weekly</div>
+        <div className="legend-item"><span className="event-dot alarm"    style={{ display:'inline-block' }} /> Alarm</div>
+      </div>
     </>
   );
 
@@ -342,12 +279,12 @@ const App: React.FC = () => {
     <div className="app-container">
       <header className="calendar-header">
         <h1>THE 13 MOONS</h1>
-        <p style={{ color: 'var(--text-dim)', marginTop: '0.5rem' }}>
-          {currentDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <p className="today-label">
+          {currentDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
       </header>
 
-      {/* ── Tab Navigation ───────────────────────────────── */}
+      {/* ── Desktop Top Tab Nav (hidden on mobile) ─── */}
       <nav className="tab-nav">
         <button onClick={() => setActiveTab('today')} className={`tab-btn${activeTab === 'today' ? ' active' : ''}`}>
           <Moon size={16} /> Today
@@ -357,13 +294,11 @@ const App: React.FC = () => {
         </button>
         <button onClick={() => setActiveTab('alarms')} className={`tab-btn${activeTab === 'alarms' ? ' active' : ''}`}>
           <Bell size={16} /> My Alarms
-          {upcomingAlarmCount > 0 && (
-            <span className="tab-badge">{upcomingAlarmCount}</span>
-          )}
+          {upcomingAlarmCount > 0 && <span className="tab-badge">{upcomingAlarmCount}</span>}
         </button>
       </nav>
 
-      <main style={{ paddingTop: '1.5rem' }}>
+      <main style={{ paddingTop: '0.5rem' }}>
         {activeTab === 'today' && TodayGrid()}
         {activeTab === 'year' && (
           <YearView
@@ -382,6 +317,35 @@ const App: React.FC = () => {
           />
         )}
       </main>
+
+      {/* ── Mobile Bottom Navigation (Android-native style) ─── */}
+      <nav className="bottom-nav">
+        <button
+          id="bottom-nav-today"
+          className={`bottom-nav-btn${activeTab === 'today' ? ' active' : ''}`}
+          onClick={() => setActiveTab('today')}
+        >
+          <span className="nav-icon-wrap"><Moon size={20} /></span>
+          Today
+        </button>
+        <button
+          id="bottom-nav-year"
+          className={`bottom-nav-btn${activeTab === 'year' ? ' active' : ''}`}
+          onClick={() => setActiveTab('year')}
+        >
+          <span className="nav-icon-wrap"><CalendarIcon size={20} /></span>
+          Year
+        </button>
+        <button
+          id="bottom-nav-alarms"
+          className={`bottom-nav-btn${activeTab === 'alarms' ? ' active' : ''}`}
+          onClick={() => setActiveTab('alarms')}
+        >
+          <span className="nav-icon-wrap"><Bell size={20} /></span>
+          Alarms
+          {upcomingAlarmCount > 0 && <span className="tab-badge">{upcomingAlarmCount}</span>}
+        </button>
+      </nav>
 
       {/* ── Import Modal ─────────────────────────────────── */}
       {isImportModalOpen && (
@@ -411,10 +375,6 @@ const App: React.FC = () => {
           onToggleAlarm={handleToggleAlarm}
         />
       )}
-
-      <footer style={{ marginTop: '5rem', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-        <p>Built for Lovely Penelope Inc. • Focused Alignment System</p>
-      </footer>
     </div>
   );
 };
